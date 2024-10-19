@@ -1,23 +1,61 @@
 
 
+a simple sitemap generator
+
+
 ## 参数
 
-配置UA，配置REFER，超时时间，HOST
+`./main options args`
 
-死链检测
+**options**
 
-模糊合并， 结尾时带不带？  结尾是否有#号
+> ua/u : 配置请求时的User-Agent
+>
+> refer/r : 配置请求时的Referer,不指定时则为当前页面地址
+>
+> timeout/t : 超时时间,必须是数字,默认 8000ms,
+>
+> match/m : 关键字匹配模式,默认200即为成功,指定关键字后,200并且匹配才为成功
+>
+> file/f : 存储的sitemap文件,默认`sitemap.xml`
+>
+> host/h : 主域名,不指定时自动从入口页面提取，提取协议域名端口号
+>
 
-可扩展，
+**args**
 
-img标签 图片下载 下载器
+>
+> 参数: 入口页面，可以指定多个
 
-内链
-外链
-其他
+```
+./main url1 url2
+```
+
+
+**额外功能**
+
+可提取图片等资源地址
+
+> attrs/a : 提取的选择器和属性，例如`img[src]` , 可添加多个
+
+死链检测/404检测
+
+存储的json文件可查询404或无法链接等URL
+
+## 编译
+
+**依赖**
 
 ```
 nimble install css3selectors
 ```
 
-nimpretty --maxLineLen:220 --indent:4 util.nim main.nim request.nim parser.nim
+
+
+**static build**
+
+`apk add openssl-libs-static`
+
+```
+nim --mm:arc --threads:off -d:release -d:nimDisableCertificateValidation --passL:"-ffunction-sections -fdata-sections" --passL:"-Wl,--gc-sections" --dynlibOverrideAll --passL:-s --passL:-static --passL:-lssl --passL:-lcrypto -d:ssl --opt:speed c main
+```
