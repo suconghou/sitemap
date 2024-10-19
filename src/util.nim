@@ -37,7 +37,7 @@ proc baseURL*(uri: string): string =
         if x in {'a'..'z', '0'..'9', '-', '.', ':'}: # 域名的合法字符，数字，字母，中划杠，英文逗号
             d+=1
             continue;
-        elif x == '/':
+        elif x in {'/', '?', '#'}:
             u.setLen(i+d)
             return u
         else:
@@ -68,7 +68,7 @@ proc uri_ok*(base: string, u: string): (string, URLType) =
             if x in m: # 域名的合法字符，数字，字母，中划杠，英文逗号
                 d.add(x)
                 continue
-            elif x == '/':
+            elif x in {'/', '?', '#'}:
                 break
             else: # 域名包含非法的字符串
                 return (u, Other)
@@ -93,15 +93,17 @@ proc uri_ok*(base: string, u: string): (string, URLType) =
                 break
         return (base & '/' & u.strip(true, false, {'/'}), Internal)
 
+proc encode(s: string): string =
+    result = s.replace("&amp;", "&").replace("&", "&amp;")
 
 proc put*(file: string, urls: HashSet[string]): bool =
     if urls.len == 0: return false
-    const header = """<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">"""
+    const header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"
     var texts = @[header]
     for url in urls:
-        texts.add "<url><loc>" & url & "</loc></url>"
+        texts.add "  <url>\n    <loc>" & url.encode & "</loc>\n  </url>"
     texts.add "</urlset>"
-    writeFile(file, texts.join(""))
+    writeFile(file, texts.join("\n"))
     return true
 
 proc put*(file: string, data: string): bool =

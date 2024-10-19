@@ -9,6 +9,7 @@ type URLParser = object
     others: HashSet[string]                      # 其他
     processor: PageProcessor
 
+var stopit = false
 
 # 在绝对http链接中，去掉锚点、无参数的?等
 proc clean(uri: var string) =
@@ -66,6 +67,9 @@ proc run(self: var URLParser, found: var HashSet[string]) =
         let links = self.processor.process(u, s, self.c.attrs)
         self.valid(links, found)
         echo u
+        if stopit:
+            found.clear()
+            return
 
 proc `%`(n: HashSet[string]): JsonNode =
     result = %(n.toSeq())
@@ -94,6 +98,9 @@ proc process(c: Config) =
     p.save()
 
 try:
+    proc ctrlc() {.noconv.} =
+        stopit = true
+    setControlCHook(ctrlc)
     let c = cmd()
     process(c)
 except Exception:
