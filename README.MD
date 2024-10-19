@@ -15,8 +15,6 @@ a simple sitemap generator
 >
 > timeout/t : 超时时间,必须是数字,默认 8000ms,
 >
-> match/m : 关键字匹配模式,默认200即为成功,指定关键字后,200并且匹配才为成功
->
 > file/f : 存储的sitemap文件,默认`sitemap.xml`
 >
 > host/h : 主域名,不指定时自动从入口页面提取，提取协议域名端口号
@@ -36,11 +34,11 @@ a simple sitemap generator
 
 可提取图片等资源地址
 
-> attrs/a : 提取的选择器和属性，例如`img[src]` , 可添加多个
+> attrs/a : 提取的选择器和属性，例如`img[src]` , 可添加多个, `-a="img[src^=https]" -a="img[src]" -a="script[src]"`
 
 死链检测/404检测
 
-存储的json文件可查询404或无法链接等URL
+> 存储的json文件可查看404或无法访问等URL
 
 ## 编译
 
