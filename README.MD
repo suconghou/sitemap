@@ -11,13 +11,15 @@ a simple sitemap generator
 
 > ua/u : 配置请求时的User-Agent
 >
-> refer/r : 配置请求时的Referer,不指定时则为当前页面地址
+> refer/r : 配置请求时的Referer,不指定时则为域名根目录
 >
 > timeout/t : 超时时间,必须是数字,默认 8000ms,
 >
 > file/f : 存储的sitemap文件,默认`sitemap.xml`
 >
 > host/h : 主域名,不指定时自动从入口页面提取，提取协议域名端口号
+>
+> match/m : 关键词匹配，url 中包含关键词才读取此url内容继续分析
 >
 
 **args**

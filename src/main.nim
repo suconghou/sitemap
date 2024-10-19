@@ -1,4 +1,4 @@
-import util, request, tables, sets, sequtils, streams, strutils, parser, json
+import util, request, tables, sets, sequtils, streams, strutils, parser, json, algorithm
 
 type URLParser = object
     c: Config
@@ -33,8 +33,10 @@ proc one[T](items: HashSet[T]): T =
 
 proc fetch(self: var URLParser, u: string): Stream =
     self.hits.incl(u)
+    if (not self.c.match.isEmptyOrWhitespace) and (not u.contains(self.c.match)):
+        return nil # 有关键词匹配但未匹配上则直接跳过处理
     try:
-        let resp = get(u, self.c.timeout.int, self.c.ua, if self.c.refer.isEmptyOrWhitespace: u else: self.c.refer)
+        let resp = get(u, self.c.timeout.int, self.c.ua, if self.c.refer.isEmptyOrWhitespace: self.base else: self.c.refer)
         let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
         self.internal.mgetOrPut(statuscode, initHashSet[string]()).incl(u)
         return resp.bodyStream
@@ -42,9 +44,9 @@ proc fetch(self: var URLParser, u: string): Stream =
         self.internal.mgetOrPut(0, initHashSet[string]()).incl(u)
         return nil
 
-proc valid(self: var URLParser, links: HashSet[string], found: var HashSet[string]) =
+proc valid(self: var URLParser, links: HashSet[string], curr: string, found: var HashSet[string]) =
     for u in links:
-        var (x, utype) = uri_ok(self.base, u)
+        var (x, utype) = uri_ok(self.base, curr, u)
         if x.isEmptyOrWhitespace:
             continue;
         x.clean
@@ -65,14 +67,14 @@ proc run(self: var URLParser, found: var HashSet[string]) =
         if s.isNil:
             continue
         let links = self.processor.process(u, s, self.c.attrs)
-        self.valid(links, found)
+        self.valid(links, u, found)
         echo u
         if stopit:
             found.clear()
             return
 
 proc `%`(n: HashSet[string]): JsonNode =
-    result = %(n.toSeq())
+    result = %(n.toSeq().sorted())
 
 proc `%`(n: TableRef[Natural, HashSet[string]]): JsonNode =
     result = newJObject()

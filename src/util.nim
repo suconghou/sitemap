@@ -1,4 +1,4 @@
-import parseopt, strutils, sets
+import parseopt, strutils, sets, sequtils, algorithm
 
 
 
@@ -9,6 +9,7 @@ type Config* = object
     file*: string
     urls*: HashSet[string]
     refer*: string
+    match*: string
     attrs*: HashSet[string]
 
 
@@ -49,7 +50,7 @@ proc baseURL*(uri: string): string =
     return u
 
 # 鉴定是否外链, 如果是相对地址，则转化为绝对地址, 调用方保证了u是strip空格后的
-proc uri_ok*(base: string, u: string): (string, URLType) =
+proc uri_ok*(base: string, curr: string, u: string): (string, URLType) =
     if len(u) > 8 and (u[0..6] ~= "http://" or u[0..7] ~= "https://"):
         # 是http绝对地址，则获取域名, 注意：协议不一致或者带有:80或:443等 此处将识别为外链
         let x = baseURL(u)
@@ -91,7 +92,8 @@ proc uri_ok*(base: string, u: string): (string, URLType) =
                 return (u, Other)
             else:
                 break
-        return (base & '/' & u.strip(true, false, {'/'}), Internal)
+        let b = if u.startsWith('/') or curr ~= base: base else: curr.rsplit('/', 1)[0]
+        return (b & '/' & u.strip(true, false, {'/'}), Internal)
 
 proc encode(s: string): string =
     result = s.replace("&amp;", "&").replace("&", "&amp;")
@@ -100,7 +102,7 @@ proc put*(file: string, urls: HashSet[string]): bool =
     if urls.len == 0: return false
     const header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"
     var texts = @[header]
-    for url in urls:
+    for url in urls.toSeq().sorted():
         texts.add "  <url>\n    <loc>" & url.encode & "</loc>\n  </url>"
     texts.add "</urlset>"
     writeFile(file, texts.join("\n"))
@@ -123,6 +125,7 @@ proc cmd*(): Config =
             of "ua", "u": cfg.ua = val
             of "refer", "r": cfg.refer = val
             of "file", "f": cfg.file = val
+            of "match", "m": cfg.match = val
             of "attrs", "a": cfg.attrs.incl(val)
         of cmdEnd: assert(false) # cannot happen
     return cfg
