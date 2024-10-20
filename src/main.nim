@@ -2,6 +2,7 @@ import util, request, tables, sets, sequtils, streams, strutils, parser, json, a
 
 type URLParser = object
     c: Config
+    cli: Cli
     base: string                                 # 根地址,协议、域名、端口
     hits: HashSet[string]
     internal: TableRef[Natural, HashSet[string]] # 内链
@@ -36,7 +37,7 @@ proc fetch(self: var URLParser, u: string): Stream =
     if (not self.c.match.isEmptyOrWhitespace) and (not u.contains(self.c.match)):
         return nil # 有关键词匹配但未匹配上则直接跳过处理
     try:
-        let resp = get(u, self.c.timeout.int, self.c.ua, if self.c.refer.isEmptyOrWhitespace: self.base else: self.c.refer)
+        let resp = self.cli.get(u)
         let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
         self.internal.mgetOrPut(statuscode, initHashSet[string]()).incl(u)
         return resp.bodyStream
@@ -83,17 +84,60 @@ proc `%`(n: TableRef[Natural, HashSet[string]]): JsonNode =
 
 proc save(self: var URLParser) =
     discard put(self.c.file, self.internal.getOrDefault(200, initHashSet[string]()))
-    let data = $( %* {"internal": self.internal, "external": self.external, "others": self.others, "attrs": self.processor.attrs})
+    let info = %* {"internal": self.internal, "external": self.external, "others": self.others}
+    for k, v in self.processor.attrs:
+        info.add(k, %v)
+    let data = $info
     discard put(self.c.file.replace(".xml", ".json"), data)
+
+
+proc getfile(cli: Cli, u: string) =
+    if not ishttp(u):
+        return
+    let t = u.rsplit('#')[0].rsplit('?')[0].rsplit('/', 1)
+    var name = t[t.high]
+    if name.isEmptyOrWhitespace:
+        name = fnv1a32(u)
+    try:
+        echo u
+        cli.download(u, name)
+    except:
+        discard
+
+proc download(cli: Cli, j: JsonNode, attrs: HashSet[string]) =
+    for a in attrs:
+        let v = j[a]
+        if v.kind == JArray:
+            for item in v:
+                cli.getfile(item.getStr)
+                if stopit:
+                    return
+        elif v.kind == JString:
+            cli.getfile(v.getStr)
+        if stopit:
+            return
+
+proc download(cli: Cli, f: File|string) =
+    for line in f.lines:
+        cli.getfile(line.strip())
+        if stopit:
+            return
 
 proc process(c: Config) =
     if c.host.isEmptyOrWhitespace and c.urls.len < 1:
-        raise newException(ValueError, "Invalid configuration")
+        let cli = newCli(c.timeout.int, c.ua, c.refer)
+        if c.file.isEmptyOrWhitespace or c.attrs.len < 1:
+            cli.download(stdin)
+        else:
+            let j = parseJson(readFile(c.file))
+            cli.download(j, c.attrs)
+        return
     let h = if c.urls.len < 1: [c.host].toHashSet() else: c.urls
     let base = baseURL(if c.host.isEmptyOrWhitespace: h.one else: c.host)
     if base.isEmptyOrWhitespace:
         raise newException(ValueError, "Invalid base URL")
-    var p = URLParser(c: c, base: base, internal: newTable[Natural, initHashSet[string]()](), processor: newPageProcessor())
+    let cli = newCli(c.timeout.int, c.ua, if c.refer.isEmptyOrWhitespace: base else: c.refer)
+    var p = URLParser(c: c, cli: cli, base: base, internal: newTable[Natural, initHashSet[string]()](), processor: newPageProcessor())
     var found = h.map(pretty)
     while found.len > 0:
         p.run(found)

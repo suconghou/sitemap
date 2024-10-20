@@ -42,6 +42,23 @@ a simple sitemap generator
 
 > 存储的json文件可查看404或无法访问等URL
 
+下载模式
+
+当没有配置`args`和`-h`参数时，进入下载模式
+
+`file/f`为读取的json文件
+
+此时的`attrs/a`为json文件里提取url的key
+
+> -a="img[src^=http]" , 可配置多个
+>
+> -f="sitemap.json"
+>
+
+如果没有`-a`参数，还可以从标准输入读取，每行一个url
+
+
+
 ## 编译
 
 **依赖**

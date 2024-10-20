@@ -19,10 +19,23 @@ type URLType* = enum
     Other
 
 
+proc fnv1a32*(data: string): string =
+    const
+        FNV_PRIME = 16777619'u32
+        FNV_OFFSET_BASIS = 2166136261'u32
+    var hash = FNV_OFFSET_BASIS
+    for c in data:
+        hash = hash xor uint32(c.ord)
+        hash = hash * FNV_PRIME
+    result = toHex(int32(hash), 8) # 转换为8位的16进制字符串
+
 # 不区分大小写比较
 proc `~=` (a, b: string): bool =
     return cmpIgnoreCase(a, b) == 0
 
+
+proc ishttp*(u: string): bool =
+    result = u.len > 8 and (u[0..6] ~= "http://" or u[0..7] ~= "https://")
 
 # 获取协议域名端口号，输入url不合法则返回空字符串
 proc baseURL*(uri: string): string =
