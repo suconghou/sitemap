@@ -82,7 +82,7 @@ proc `%`(n: TableRef[Natural, HashSet[string]]): JsonNode =
     for k, v in n:
         result.add(k.intToStr, %v)
 
-proc save(self: var URLParser) =
+proc save(self: URLParser) =
     discard put(self.c.file, self.internal.getOrDefault(200, initHashSet[string]()))
     let info = %* {"internal": self.internal, "external": self.external, "others": self.others}
     for k, v in self.processor.attrs:

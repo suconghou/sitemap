@@ -10,10 +10,11 @@ proc document(s: Stream): HTMLParser =
 
 
 proc attr_value(d: HTMLParser, s: string): HashSet[string] =
-    let t = strip(s.rsplit("]", 1)[0].rsplit("[", 1)[1])
+    let tmp = s.rsplit("]", 1)[0].rsplit("[", 1)
+    let t = strip(tmp[tmp.high])
     var attr = newStringOfCap(t.len)
     for x in t:
-        if x in IdentChars:
+        if x in IdentChars or x == '-':
             attr.add(x)
         else:
             break
