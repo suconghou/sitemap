@@ -123,7 +123,7 @@ proc download(cli: Cli, f: File|string) =
         if stopit:
             return
 
-proc process(c: Config) =
+proc process(c: sink Config) =
     if c.host.isEmptyOrWhitespace and c.urls.len < 1:
         let cli = newCli(c.timeout.int, c.ua, c.refer)
         if c.file.isEmptyOrWhitespace or c.attrs.len < 1:
