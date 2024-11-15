@@ -21,6 +21,8 @@ a simple sitemap generator
 >
 > match/m : 关键词匹配，url 中包含关键词才读取此url内容继续分析
 >
+> cache/c : 配置缓存目录，当配置有值时启用缓存
+>
 
 **args**
 

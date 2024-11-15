@@ -1,14 +1,14 @@
-import util, request, tables, sets, sequtils, streams, strutils, parser, json, algorithm
+import util, request, tables, sets, sequtils, streams, strutils, parser, json, algorithm, httpClient, os
 
 type URLParser = object
     c: Config
-    cli: Cli
     base: string                                 # 根地址,协议、域名、端口
     hits: HashSet[string]
     internal: TableRef[Natural, HashSet[string]] # 内链
     external: HashSet[string]                    # 外链
     others: HashSet[string]                      # 其他
     processor: PageProcessor
+    pageFn: proc(u: string): (Stream, int)
 
 var stopit = false
 
@@ -37,10 +37,9 @@ proc fetch(self: var URLParser, u: string): Stream =
     if (not self.c.match.isEmptyOrWhitespace) and (not u.contains(self.c.match)):
         return nil # 有关键词匹配但未匹配上则直接跳过处理
     try:
-        let resp = self.cli.get(u)
-        let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
+        let (stream, statuscode) = self.pageFn(u)
         self.internal.mgetOrPut(statuscode, initHashSet[string]()).incl(u)
-        return resp.bodyStream
+        return stream
     except:
         self.internal.mgetOrPut(0, initHashSet[string]()).incl(u)
         return nil
@@ -137,7 +136,24 @@ proc process(c: sink Config) =
     if base.isEmptyOrWhitespace:
         raise newException(ValueError, "Invalid base URL")
     let cli = newCli(c.timeout.int, c.ua, if c.refer.isEmptyOrWhitespace: base else: c.refer)
-    var p = URLParser(c: c, cli: cli, base: base, internal: newTable[Natural, initHashSet[string]()](), processor: newPageProcessor())
+    let d = c.cache.strip()
+    let pageFn = if d.dir_ok:
+        proc(u: string): (Stream, int) =
+            let f = (d / fnv1a32(u)) & ".html"
+            if f.fileExists:
+                return (f.openFileStream, 200)
+            let resp = cli.get(u)
+            let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
+            let s = resp.body()
+            if statuscode in 200..299:
+                try: f.writeFile(s) except: discard
+            return (newStringStream(s), statuscode)
+    else:
+        proc(u: string): (Stream, int) =
+            let resp = cli.get(u)
+            let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
+            return (resp.bodyStream, statuscode)
+    var p = URLParser(c: c, base: base, pageFn: pageFn, internal: newTable[Natural, initHashSet[string]()](), processor: newPageProcessor())
     var found = h.map(pretty)
     while found.len > 0:
         p.run(found)

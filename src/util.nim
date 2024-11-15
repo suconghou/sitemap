@@ -1,4 +1,4 @@
-import parseopt, strutils, sets, sequtils, algorithm
+import parseopt, strutils, sets, sequtils, algorithm, os
 
 
 
@@ -10,6 +10,7 @@ type Config* = object
     urls*: HashSet[string]
     refer*: string
     match*: string
+    cache*: string
     attrs*: HashSet[string]
 
 
@@ -27,7 +28,7 @@ proc fnv1a32*(data: string): string =
     for c in data:
         hash = hash xor uint32(c.ord)
         hash = hash * FNV_PRIME
-    result = toHex(int32(hash), 8) # 转换为8位的16进制字符串
+    result = toHex(hash, 8) # 转换为8位的16进制字符串
 
 # 不区分大小写比较
 proc `~=` (a, b: string): bool =
@@ -139,6 +140,15 @@ proc cmd*(): Config =
             of "refer", "r": cfg.refer = val
             of "file", "f": cfg.file = val
             of "match", "m": cfg.match = val
+            of "cache", "c": cfg.cache = val
             of "attrs", "a": cfg.attrs.incl(val)
         of cmdEnd: assert(false) # cannot happen
     return cfg
+
+proc dir_ok*(s: string): bool =
+    if s.isEmptyOrWhitespace:
+        return false
+    try:
+        return s.existsOrCreateDir
+    except:
+        return false
