@@ -70,7 +70,7 @@ a simple sitemap generator
 nimble install css3selectors
 ```
 
-
+`nim --threads:off --mm:arc -d:ssl -d:release --opt:speed c main.nim`
 
 **static build**
 
