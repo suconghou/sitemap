@@ -142,6 +142,7 @@ proc process(c: sink Config) =
             let f = (d / fnv1a32(u)) & ".html"
             if f.fileExists:
                 return (f.openFileStream, 200)
+            sleep(int(c.sleep))
             let resp = cli.get(u)
             let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
             let s = resp.body()
@@ -150,6 +151,7 @@ proc process(c: sink Config) =
             return (newStringStream(s), statuscode)
     else:
         proc(u: string): (Stream, int) =
+            sleep(int(c.sleep))
             let resp = cli.get(u)
             let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
             return (resp.bodyStream, statuscode)

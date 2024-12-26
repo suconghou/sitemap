@@ -6,6 +6,7 @@ type Config* = object
     ua*: string
     host*: string
     timeout*: uint
+    sleep*: uint
     file*: string
     urls*: HashSet[string]
     refer*: string
@@ -127,7 +128,7 @@ proc put*(file: string, data: string): bool =
     return true
 
 proc cmd*(): Config =
-    var cfg = Config(timeout: 8000, file: "sitemap.xml", )
+    var cfg = Config(timeout: 8000, sleep: 0, file: "sitemap.xml", )
     for kind, key, val in getopt():
         case kind
         of cmdArgument:
@@ -136,6 +137,7 @@ proc cmd*(): Config =
             case key
             of "host", "h": cfg.host = val
             of "timeout", "t": cfg.timeout = try: parseUint(val) except ValueError: 8000
+            of "sleep", "s": cfg.sleep = try: parseUint(val) except ValueError: 0
             of "ua", "u": cfg.ua = val
             of "refer", "r": cfg.refer = val
             of "file", "f": cfg.file = val

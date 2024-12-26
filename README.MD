@@ -23,7 +23,8 @@ a simple sitemap generator
 >
 > cache/c : 配置缓存目录，当配置有值时启用缓存
 >
-
+> sleep/s : 每次请求的间隔休眠时间，默认0，单位ms
+>
 **args**
 
 >
