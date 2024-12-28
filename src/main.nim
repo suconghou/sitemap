@@ -67,6 +67,7 @@ proc run(self: var URLParser, found: var HashSet[string]) =
         if s.isNil:
             continue
         let links = self.processor.process(u, s, self.c.attrs)
+        s.close()
         self.valid(links, u, found)
         echo u
         if stopit:

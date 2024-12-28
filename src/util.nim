@@ -1,4 +1,4 @@
-import parseopt, strutils, sets, sequtils, algorithm, os
+import parseopt, strutils, sets, sequtils, algorithm, os, uri
 
 
 
@@ -29,7 +29,7 @@ proc fnv1a32*(data: string): string =
     for c in data:
         hash = hash xor uint32(c.ord)
         hash = hash * FNV_PRIME
-    result = toHex(hash, 8) # 转换为8位的16进制字符串
+    result = toHex(hash, 8).toLower() # 转换为8位的16进制字符串
 
 # 不区分大小写比较
 proc `~=` (a, b: string): bool =
@@ -107,8 +107,7 @@ proc uri_ok*(base: string, curr: string, u: string): (string, URLType) =
                 return (u, Other)
             else:
                 break
-        let b = if u.startsWith('/') or curr ~= base: base else: curr.rsplit('/', 1)[0]
-        return (b & '/' & u.strip(true, false, {'/'}), Internal)
+        return ($(combine(parseUri(curr), parseUri(u))), Internal)
 
 proc encode(s: string): string =
     result = s.replace("&amp;", "&").replace("&", "&amp;")
