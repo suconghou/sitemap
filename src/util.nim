@@ -22,10 +22,8 @@ type URLType* = enum
 
 
 proc fnv1a32*(data: string): string =
-    const
-        FNV_PRIME = 16777619'u32
-        FNV_OFFSET_BASIS = 2166136261'u32
-    var hash = FNV_OFFSET_BASIS
+    const FNV_PRIME = 16777619'u32
+    var hash = 2166136261'u32
     for c in data:
         hash = hash xor uint32(c.ord)
         hash = hash * FNV_PRIME
@@ -42,7 +40,7 @@ proc ishttp*(u: string): bool =
 # 获取协议域名端口号，输入url不合法则返回空字符串
 proc baseURL*(uri: string): string =
     var u = uri.toLower()
-    if len(u) < 8 or (u[0..6] != "http://" and u[0..7] != "https://"):
+    if u.len < 8 or not (u.startsWith("http://") or u.startsWith("https://")):
         return ""
     let i = u.find("://")+3
     let f = u[i]

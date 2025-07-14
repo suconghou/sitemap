@@ -1,6 +1,6 @@
 
 
-a simple sitemap generator
+a simple sitemap generator and page crawler
 
 
 ## 参数

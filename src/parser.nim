@@ -38,4 +38,11 @@ proc process*(p: PageProcessor, u: string, s: Stream, attrs: HashSet[string]): H
     let d = document(s)
     result = d.attr_value("a[href]")
     for item in attrs:
-        p.attrs[item] = union(p.attrs.getOrDefault(item, initHashSet[string]()), try: d.attr_value(item) except: initHashSet[string]())
+        try:
+            let values = d.attr_value(item)
+            if item notin p.attrs:
+                p.attrs[item] = values
+            else:
+                p.attrs[item].incl(values)
+        except:
+            discard
