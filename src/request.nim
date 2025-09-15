@@ -1,4 +1,4 @@
-import strutils, httpClient, os
+import strutils, httpClient, os, streams
 
 type Cli* = object
     cli: HttpClient
@@ -23,9 +23,17 @@ proc get*(self: Cli, url: string): Response =
     return self.cli.request(url, HttpGet)
 
 
+proc copyStream(input: Stream, output: File) =
+    var buf: array[4096, char]
+    while not input.atEnd:
+        let bytesRead = input.readData(addr buf[0], buf.len)
+        if bytesRead > 0:
+            discard output.writeBuffer(addr buf[0], bytesRead)
+
 proc download*(self: Cli, url: string, name: string) =
-    if name == "/dev/stdout":
-        self.cli.downloadFile(url, name)
+    if name == "/dev/stdout" or name == "-":
+        let resp = self.cli.get(url)
+        copyStream(resp.bodyStream, stdout)
         return
     if fileExists(name):
         return
