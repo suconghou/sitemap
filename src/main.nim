@@ -91,8 +91,11 @@ proc save(self: URLParser) =
     discard put(self.c.file.replace(".xml", ".json"), data)
 
 
-proc getfile(cli: Cli, u: string) =
+proc getfile(cli: Cli, u: string, stdout: bool) =
     if not ishttp(u):
+        return
+    if stdout:
+        cli.download(u, "/dev/stdout")
         return
     let t = u.rsplit('#')[0].rsplit('?')[0].rsplit('/', 1)
     var name = t[t.high]
@@ -104,22 +107,22 @@ proc getfile(cli: Cli, u: string) =
     except:
         discard
 
-proc download(cli: Cli, j: JsonNode, attrs: HashSet[string]) =
+proc download(cli: Cli, j: JsonNode, attrs: HashSet[string], stdout: bool) =
     for a in attrs:
         let v = j[a]
         if v.kind == JArray:
             for item in v:
-                cli.getfile(item.getStr)
+                cli.getfile(item.getStr, stdout)
                 if stopit:
                     return
         elif v.kind == JString:
-            cli.getfile(v.getStr)
+            cli.getfile(v.getStr, stdout)
         if stopit:
             return
 
-proc download(cli: Cli, f: File|string) =
+proc download(cli: Cli, f: File|string, stdout: bool) =
     for line in f.lines:
-        cli.getfile(line.strip())
+        cli.getfile(line.strip(), stdout)
         if stopit:
             return
 
@@ -127,10 +130,10 @@ proc process(c: sink Config) =
     if c.host.isEmptyOrWhitespace and c.urls.len < 1:
         let cli = newCli(c.timeout.int, c.ua, c.refer)
         if c.file.isEmptyOrWhitespace or c.attrs.len < 1:
-            cli.download(stdin)
+            cli.download(stdin, c.cache == "stdout" or c.cache == "-")
         else:
             let j = parseJson(readFile(c.file))
-            cli.download(j, c.attrs)
+            cli.download(j, c.attrs, c.cache == "stdout" or c.cache == "-")
         return
     let h = if c.urls.len < 1: [c.host].toHashSet() else: c.urls
     let base = baseURL(if c.host.isEmptyOrWhitespace: h.one else: c.host)

@@ -58,9 +58,11 @@ a simple sitemap generator and page crawler
 > -f="sitemap.json"
 >
 
-如果没有`-a`参数，还可以从标准输入读取，每行一个url
+如果`-a`参数和`-f`参数也没有指定，还可以从标准输入读取，每行一个url
 
+下载模式如果指定`-c`参数为`stdout`可将下载的文件输出到标准输出
 
+环境变量`HEADER_`开头可额外配置HTTP的请求头
 
 ## 编译
 
