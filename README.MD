@@ -79,5 +79,5 @@ nimble install css3selectors
 `apk add openssl-libs-static`
 
 ```
-nim --mm:arc --threads:off -d:release -d:nimDisableCertificateValidation --passL:"-ffunction-sections -fdata-sections" --passL:"-Wl,--gc-sections" --dynlibOverrideAll --passL:-s --passL:-static --passL:-lssl --passL:-lcrypto -d:ssl --opt:speed c main
+nim --mm:arc --threads:off -d:release -d:nimDisableCertificateValidation -d:useOpenSsl3 --passL:"-ffunction-sections -fdata-sections" --passL:"-Wl,--gc-sections" --dynlibOverrideAll --passL:-s --passL:-static --passL:-lssl --passL:-lcrypto -d:ssl --opt:speed c main
 ```
