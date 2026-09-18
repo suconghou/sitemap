@@ -43,6 +43,8 @@ proc baseURL*(uri: string): string =
     if u.len < 8 or not (u.startsWith("http://") or u.startsWith("https://")):
         return ""
     let i = u.find("://")+3
+    if i > u.high: # 形如 "https://" 后没有域名
+        return ""
     let f = u[i]
     if f notin {'a'..'z', '0'..'9'}: # 域名不能以符号开头
         return ""
@@ -92,8 +94,9 @@ proc uri_ok*(base: string, curr: string, u: string): (string, URLType) =
             return (u, Other)
         if d[^1] == '.': # 域名结尾有.其实是合法的 https://imququ.com/post/domain-public-suffix-list.html
             d.setLen(l-1)
-        if base.endsWith(d.toLower()):
-            let n = base.find("://")+2 # 截取 协议部分带://
+        let n = base.find("://")+2 # 截取 协议部分带://
+        # 规范化后精确比较，避免 foo.example.com 误匹配 //example.com
+        if baseURL(base[0..n] & d & "/") == base:
             return (base[0..n] & d & u[l+2..^1], Internal)
         return (u, External) # 域名不匹配，可能是外链
     else: # 是相对地址，或非 http https 协议
@@ -107,8 +110,9 @@ proc uri_ok*(base: string, curr: string, u: string): (string, URLType) =
                 break
         return ($(combine(parseUri(curr), parseUri(u))), Internal)
 
+# XML 文本节点必须转义 & < >；HTML 解析器已对属性值做过实体解码，此处重新转义
 proc encode(s: string): string =
-    result = s.replace("&amp;", "&").replace("&", "&amp;")
+    result = s.multiReplace(("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"))
 
 proc put*(file: string, urls: HashSet[string]): bool =
     if urls.len == 0: return false
@@ -141,7 +145,7 @@ proc cmd*(): Config =
             of "match", "m": cfg.match = val
             of "cache", "c": cfg.cache = val
             of "attrs", "a": cfg.attrs.incl(val)
-        of cmdEnd: assert(false) # cannot happen
+        of cmdEnd: discard # cannot happen
     return cfg
 
 proc dir_ok*(s: string): bool =

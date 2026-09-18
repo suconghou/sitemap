@@ -69,7 +69,7 @@ a simple sitemap generator and page crawler
 **依赖**
 
 ```
-nimble install css3selectors
+nimble install css3selectors chame
 ```
 
 `nim --threads:off --mm:arc -d:ssl -d:release --opt:speed c main.nim`

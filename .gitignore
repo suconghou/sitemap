@@ -1,0 +1,18 @@
+# 编译产物
+/main
+/src/main
+sitemap_apple_arm64
+*.exe
+
+# 抓取缓存与输出
+cache_dir/
+*.tmp
+
+# 测试/运行残留
+src/123/
+src/*.json
+src/*.xml
+src/*.zip
+
+# macOS
+.DS_Store

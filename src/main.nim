@@ -87,8 +87,9 @@ proc save(self: URLParser) =
     let info = %* {"internal": self.internal, "external": self.external, "others": self.others}
     for k, v in self.processor.attrs:
         info.add(k, %v)
-    let data = $info
-    discard put(self.c.file.replace(".xml", ".json"), data)
+    # 仅当输出是 .xml 时替换扩展名，否则追加 .json，避免 json 覆盖 sitemap 文件
+    let jsonFile = if self.c.file.endsWith(".xml"): self.c.file[0 .. ^5] & ".json" else: self.c.file & ".json"
+    discard put(jsonFile, $info)
 
 
 proc getfile(cli: Cli, u: string, stdout: bool) =
