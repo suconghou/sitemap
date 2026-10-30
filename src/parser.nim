@@ -44,5 +44,5 @@ proc process*(p: PageProcessor, u: string, s: Stream, attrs: HashSet[string]): H
                 p.attrs[item] = values
             else:
                 p.attrs[item].incl(values)
-        except:
+        except CatchableError:
             discard

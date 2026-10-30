@@ -40,7 +40,7 @@ proc fetch(self: var URLParser, u: string): Stream =
         let (stream, statuscode) = self.pageFn(u)
         self.internal.mgetOrPut(statuscode, initHashSet[string]()).incl(u)
         return stream
-    except:
+    except CatchableError:
         self.internal.mgetOrPut(0, initHashSet[string]()).incl(u)
         return nil
 
@@ -105,7 +105,7 @@ proc getfile(cli: Cli, u: string, stdout: bool) =
     try:
         echo u
         cli.download(u, name)
-    except:
+    except CatchableError:
         discard
 
 proc download(cli: Cli, j: JsonNode, attrs: HashSet[string], stdout: bool) =
@@ -152,7 +152,7 @@ proc process(c: sink Config) =
             let statuscode = resp.status[0 .. 2].parseInt # same as resp.code
             let s = resp.body()
             if statuscode in 200..299:
-                try: f.writeFile(s) except: discard
+                try: f.writeFile(s) except CatchableError: discard
             return (newStringStream(s), statuscode)
     else:
         proc(u: string): (Stream, int) =

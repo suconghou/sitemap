@@ -153,5 +153,5 @@ proc dir_ok*(s: string): bool =
         return false
     try:
         return s.existsOrCreateDir
-    except:
+    except CatchableError:
         return false
